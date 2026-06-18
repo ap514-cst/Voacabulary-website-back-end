@@ -15,7 +15,7 @@ const irregularSchema=mongooes.Schema({
         type:String
     },
     explan:{
-        type:String
+        type:Stringk
     }
 
 

@@ -4,6 +4,8 @@ const gtts = require("gtts");
 const cloudinary = require("../cloudinary");
 const fs = require("fs");
 const path = require("path");
+const socket =require("../socket");
+//const {emitNewWord}=require("../index")
 
 // Generate audio + upload to Cloudinary
 const generateAndUploadAudio = async (word) => {
@@ -38,27 +40,68 @@ const vocPOST = async (req, res) => {
   try {
     const { englishWord, banglaMeaning, explanation, level } = req.body;
 
-    // Check duplicate
-    const exist = await Vocabulary.findOne({ englishWord: englishWord });
-    if (exist) return res.status(400).json({ message: "Word already exists" });
+    // Validate
+    if (!englishWord || !banglaMeaning || !level) {
+      return res.status(400).json({ 
+        success: false,
+        message: "English word, Bangla meaning, and level are required" 
+      });
+    }
 
-    // Audio
-    const audioURL = await generateAndUploadAudio(englishWord);
+    // Check duplicate
+    const exist = await Vocabulary.findOne({ englishWord });
+    if (exist) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Word already exists" 
+      });
+    }
 
     // Save to MongoDB
     const newWord = new Vocabulary({
       englishWord,
       banglaMeaning,
-      explanation,
+      explanation: explanation || '',
       level,
-      audio: audioURL
     });
 
     await newWord.save();
-    res.json({ message: "Word added successfully", data: newWord });
+
+    // Prepare notification data
+    const notificationData = {
+      id: newWord._id,
+      word: englishWord,
+      banglaMeaning: banglaMeaning,
+      category: level,
+      message: `✨ New ${level} word added: "${englishWord}"`,
+      timestamp: new Date().toISOString(),
+      type: 'word_added'
+    };
+
+    // Emit notification using socket.js
+    socket.emitNewWord(notificationData);
+
+    console.log("✅ নোটিফিকেশন পাঠানোর প্রক্রিয়া সম্পন্ন");
+
+    // Send success response
+    res.status(201).json({ 
+      success: true,
+      message: "Word added successfully",
+      data: {
+        id: newWord._id,
+        englishWord: newWord.englishWord,
+        banglaMeaning: newWord.banglaMeaning,
+        level: newWord.level
+      }
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in vocPOST:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error",
+      error: error.message 
+    });
   }
 };
 
