@@ -31,7 +31,9 @@ socket.init(server); // This attaches socket.io to your server
 console.log("✅ Socket.io initialization সম্পন্ন হয়েছে");
 
 // Make socket functions available globally (optional)
-app.set('socketio', socket.getIo());
+const io = socket.init(server);
+app.set("socketio", io);
+
 
 // Routes
 app.use("/api/users", userRouter);
