@@ -10,7 +10,7 @@ module.exports = {
     
     io = socketIO(server, {
       cors: {
-        origin: ["http://localhost:5173", "http://localhost:3000"],
+        origin: ["http://localhost:5173", "http://localhost:3000","https://voocabularybd.netlify.app"],
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true
       }
