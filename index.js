@@ -13,7 +13,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:2000","https://learnixdb.netlify.app/"],
+  origin: ["http://localhost:5173", "http://localhost:2002","https://learnixdb.netlify.app"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
