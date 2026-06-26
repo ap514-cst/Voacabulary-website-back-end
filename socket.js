@@ -9,7 +9,7 @@ module.exports = {
     io = new socketIO.Server(server, {
       cors: {
         origin: [
-          "https://voocabularybd.netlify.app",
+          "https://learnixdb.netlify.app",
           "http://localhost:5173"
         ],
         methods: ["GET", "POST"],
