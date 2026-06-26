@@ -26,7 +26,7 @@ const server = http.createServer(app);
 console.log("🟡 Socket.io initialization শুরু হচ্ছে...");
 
 // Initialize Socket.io
-socket.init(server); // This attaches socket.io to your server
+ // This attaches socket.io to your server
 
 console.log("✅ Socket.io initialization সম্পন্ন হয়েছে");
 
