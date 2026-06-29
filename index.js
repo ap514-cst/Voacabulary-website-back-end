@@ -8,7 +8,7 @@ const vocRouter = require("./router/data_router");
 const irregularRouter = require("./router/irregularVerb");
 const socket = require("./socket"); // Import socket.js
 const phreseRouter=require("./router/phrese_router")
-
+const googlerouter=require("./router/google_router")
 const app = express();
 
 // Middleware
@@ -41,6 +41,7 @@ app.use("/api/data", vocRouter);
 app.use("/api/data", irregularRouter);
 app.use("/api/phrese",phreseRouter);
 app.use("/audio", express.static("audio"));
+app.use("/api/auth",googlerouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
