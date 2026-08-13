@@ -27,13 +27,21 @@ app.use(express.urlencoded({ extended: true }));
 // Create HTTP server
 const server = http.createServer(app);
 
-console.log("🟡 Socket.io initialization শুরু হচ্ছে...");
+//console.log("🟡 Socket.io initialization শুরু হচ্ছে...");
+
 
 // Initialize Socket.io
 const io = socket.init(server);
 app.set("socketio", io);
 
-console.log("✅ Socket.io initialization সম্পন্ন হয়েছে");
+//console.log("✅ Socket.io initialization সম্পন্ন হয়েছে");
+io.on("connection",(socket)=>{
+  console.log("Client connected",socket.id);
+  
+  socket.on("disconnect",()=>{
+    console.log("Client disconnected",socket.id)
+  })
+})
 
 // =============================================
 // ✅ API Routes (এর আগে static middleware বসাবেন না)
