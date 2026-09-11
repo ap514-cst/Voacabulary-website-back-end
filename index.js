@@ -1,110 +1,170 @@
 const express = require("express");
 require("dotenv").config();
+
 const http = require("http");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const path = require("path"); // ✅ path মডিউল যোগ করুন
+
 const userRouter = require("./router/user_router");
 const vocRouter = require("./router/data_router");
 const irregularRouter = require("./router/irregularVerb");
-const socket = require("./socket");
 const phreseRouter = require("./router/phrese_router");
 const googlerouter = require("./router/google_router");
-const sitemapRouter = require('./router/sitemap_router');
+const sitemapRouter = require("./router/sitemap_router");
+
+const socket = require("./socket");
 
 const app = express();
 
-// ✅ CORS Middleware
-app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:2002", "https://learnixdb.netlify.app"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
-}));
+// =====================================================
+// CORS
+// =====================================================
 
-// ✅ JSON Middleware
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:2002",
+  "https://learnixdb.netlify.app",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests without origin
+      // Example: Postman, server-to-server requests
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error(`CORS policy: Origin ${origin} is not allowed`)
+      );
+    },
+
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
+
+    credentials: true,
+  })
+);
+
+// =====================================================
+// BODY PARSER
+// =====================================================
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Create HTTP server
+// =====================================================
+// HTTP SERVER
+// =====================================================
+
 const server = http.createServer(app);
 
-//console.log("🟡 Socket.io initialization শুরু হচ্ছে...");
+// =====================================================
+// SOCKET.IO
+// =====================================================
 
-
-// Initialize Socket.io
 const io = socket.init(server);
+
 app.set("socketio", io);
 
-//console.log("✅ Socket.io initialization সম্পন্ন হয়েছে");
-io.on("connection",(socket)=>{
-  console.log("Client connected",socket.id);
-  
-  socket.on("disconnect",()=>{
-    console.log("Client disconnected",socket.id)
-  })
-})
+io.on("connection", (socket) => {
+  console.log("🟢 Client connected:", socket.id);
 
-// =============================================
-// ✅ API Routes (এর আগে static middleware বসাবেন না)
-// =============================================
-app.use("/api/users", userRouter);
-app.use("/api/data", vocRouter);
-app.use("/api/data", irregularRouter);
-app.use("/api/phrese", phreseRouter);
-app.use("/api/auth", googlerouter);
-app.use("/audio", express.static("audio"));
-app.use('/', sitemapRouter); // http://localhost:2002/sitemap.xml
-
-
-// =============================================
-// ✅ React Static Files Serve (API Routes এর পরে বসাতে হবে)
-// =============================================
-
-// 1️⃣ প্রথমে build ফোল্ডারের পাথ নির্ধারণ করুন
-// যদি frontend/dist ফোল্ডার backend থেকে এক লেভেল উপরে থাকে
-const frontendBuildPath = path.join(__dirname, "../frontend/dist");
-// অথবা যদি build ফোল্ডার backend এর ভিতরে থাকে
-// const frontendBuildPath = path.join(__dirname, "frontend/build");
-
-console.log(`📁 Serving static files from: ${frontendBuildPath}`);
-
-// 2️⃣ Static ফাইল সার্ভ করুন
-app.use(express.static(frontendBuildPath));
-
-// 3️⃣ সব রিকোয়েস্ট index.html-এ রিডাইরেক্ট করুন (React Router এর জন্য)
-app.use((req, res) => {
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({ success: false, message: "API route not found" });
-  }
-  res.sendFile(path.join(frontendBuildPath, "index.html"));
-});
-// =============================================
-// ❌ আগের 404 handler সরিয়ে দিন (কারণ উপরের * handler সব ক্যাচ করবে)
-// =============================================
-
-// =============================================
-// ✅ Error handling middleware (সবশেষে)
-// =============================================
-app.use((err, req, res, next) => {
-  console.error("❌ Error:", err.message);
-  res.status(500).json({
-    success: false,
-    message: "Internal server error"
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
   });
 });
 
-// Database connection and server start
+// =====================================================
+// API ROUTES
+// =====================================================
+
+app.use("/api/users", userRouter);
+
+app.use("/api/data", vocRouter);
+
+app.use("/api/data", irregularRouter);
+
+app.use("/api/phrese", phreseRouter);
+
+app.use("/api/auth", googlerouter);
+
+// =====================================================
+// AUDIO FILES
+// =====================================================
+
+app.use("/audio", express.static("audio"));
+
+// =====================================================
+// SITEMAP
+// =====================================================
+
+app.use("/", sitemapRouter);
+
+// =====================================================
+// API 404 HANDLER
+// =====================================================
+
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.originalUrl,
+  });
+});
+
+// =====================================================
+// ERROR HANDLER
+// =====================================================
+
+app.use((err, req, res, next) => {
+  console.error("❌ Server Error:", err);
+
+  // CORS error
+  if (err.message && err.message.startsWith("CORS policy")) {
+    return res.status(403).json({
+      success: false,
+      message: "CORS error",
+    });
+  }
+
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+  });
+});
+
+// =====================================================
+// DATABASE + SERVER
+// =====================================================
+
 const PORT = process.env.PORT || 2000;
+
 const MONGODB_URL = process.env.MONGODB_URL;
 
-mongoose.connect(MONGODB_URL)
+if (!MONGODB_URL) {
+  console.error("❌ MONGODB_URL is not defined in environment variables");
+  process.exit(1);
+}
+
+mongoose
+  .connect(MONGODB_URL)
   .then(() => {
     console.log("✅ Database connected successfully");
 
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-      console.log(`🔌 Socket.io ready for real-time notifications`);
-      console.log(`📁 Serving React app from: ${frontendBuildPath}`);
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log("🔌 Socket.io ready");
+      console.log("🌐 Backend API is ready");
     });
   })
   .catch((err) => {
