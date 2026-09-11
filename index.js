@@ -10,6 +10,7 @@ const irregularRouter = require("./router/irregularVerb");
 const socket = require("./socket");
 const phreseRouter = require("./router/phrese_router");
 const googlerouter = require("./router/google_router");
+const sitemapRouter = require('./router/sitemap_router');
 
 const app = express();
 
@@ -52,6 +53,8 @@ app.use("/api/data", irregularRouter);
 app.use("/api/phrese", phreseRouter);
 app.use("/api/auth", googlerouter);
 app.use("/audio", express.static("audio"));
+app.use('/', sitemapRouter); // http://localhost:2002/sitemap.xml
+
 
 // =============================================
 // ✅ React Static Files Serve (API Routes এর পরে বসাতে হবে)
