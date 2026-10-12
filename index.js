@@ -20,41 +20,31 @@ const app = express();
 // CORS
 // =====================================================
 
+
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:2002",
-  "https://learnxbd.com/",
+  "https://learnxbd.com",
+  "https://www.learnxbd.com",
   "https://voacabulary-website-front-end.apomojumder688.workers.dev",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests without origin
-      // Example: Postman, server-to-server requests
-      if (!origin) {
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(
-        new Error(`CORS policy: Origin ${origin} is not allowed`)
-      );
+      console.error("Blocked by CORS:", origin);
+      return callback(new Error(`CORS policy: Origin ${origin} is not allowed`));
     },
-
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-    ],
-
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
 
 // =====================================================
 // BODY PARSER
