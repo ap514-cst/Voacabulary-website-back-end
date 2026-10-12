@@ -23,7 +23,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:2002",
-  "https://learnixdb.netlify.app",
+  "https://learnxbd.com/",
   "https://voacabulary-website-front-end.apomojumder688.workers.dev",
 ];
 
